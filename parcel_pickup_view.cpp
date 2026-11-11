@@ -1,0 +1,182 @@
+/*
+ * Course: COEN 2220 - Programming 2
+ * Name: Mario A. Marrero Colón
+ * Lab: Lab 12 - Quicksort and Searching
+ * Description: Preserve parcel arrival records and search a ready-only view
+ * Due date: 10/nov/2026
+ */
+
+#include <iostream>
+#include <string>
+using namespace std;
+
+struct Parcel
+{
+    int pickupCode; // Unique lookup key supplied by the recipient.
+    string locker; // Physical location, not a sorting key.
+    bool ready;    // Only ready parcels belong in the lookup view.
+};
+
+void displayParcels(const Parcel parcels[], int count);
+void displayReady(Parcel *view[], int count);
+void swapParcelPointers(Parcel *&left, Parcel *&right);
+int partitionReady(Parcel *view[], int first, int last);
+void quickSortReady(Parcel *view[], int first, int last);
+int binaryFindReady(Parcel *view[], int count, int target);
+
+int main()
+{
+    const int CAPACITY = 8;
+    Parcel parcels[CAPACITY] = {
+        {640, "L-4", true},  {215, "L-8", false},
+        {580, "L-2", true},  {325, "L-6", true},
+        {710, "L-1", true},  {460, "L-5", false},
+        {190, "L-3", true},  {505, "L-7", true}
+    };
+    Parcel *readyView[CAPACITY]; // Borrow addresses; do not delete these objects.
+    int readyCount = 0;
+
+    cout << boolalpha << "Original arrival records:" << endl;
+    displayParcels(parcels, CAPACITY);
+    for (int index = 0; index < CAPACITY; index++)
+    {
+        if (parcels[index].ready)
+        {
+            readyView[readyCount] = &parcels[index];
+            readyCount++; // Count initialized view positions only.
+        }
+    }
+
+    quickSortReady(readyView, 0, readyCount - 1);
+    cout << "Ready parcels by pickup code:" << endl;
+    displayReady(readyView, readyCount);
+    cout << "Original arrival records after sorting:" << endl;
+    displayParcels(parcels, CAPACITY);
+
+    // --- STEP D1: Activate after completing the search function ---
+    /*
+    int target;
+    cout << "Enter a pickup code: ";
+    if (!(cin >> target))
+    {
+        cout << "Invalid code input." << endl;
+        return 1;
+    }
+    int position = binaryFindReady(readyView, readyCount, target);
+    if (position == -1)
+    {
+        cout << "No ready parcel with that code." << endl;
+    }
+    else
+    {
+        cout << "Pickup code " << readyView[position]->pickupCode
+             << " | Locker: " << readyView[position]->locker << endl;
+    }
+    */
+    return 0;
+}
+
+// ===== Resolve only these TODOs now (Part C) =====
+void swapParcelPointers(Parcel *&left, Parcel *&right)
+{
+    // TODO (Part C): Exchange the two borrowed addresses without changing objects.
+    Parcel *saved = left; // Save the borrowed address for the exchange.
+    left = right;
+    right = saved;
+}
+
+int partitionReady(Parcel *view[], int first, int last)
+{
+    // TODO (Part C): Select the central record and partition by ascending pickupCode.
+    int middle = first + (last - first) / 2;
+    swapParcelPointers(view[first], view[middle]);
+
+    // TODO (Part C): Follow the lecture's pivot-at-first scheme and return its final index.
+    int pivotCode = view[first]->pickupCode;
+    int boundary = first;
+
+    for (int scan = first + 1; scan <= last; scan++)
+    {
+        if (view[scan]->pickupCode < pivotCode)
+        {
+            boundary++;
+            swapParcelPointers(view[boundary], view[scan]);
+        }
+    }
+
+    swapParcelPointers(view[first], view[boundary]);
+    return boundary;
+}
+
+void quickSortReady(Parcel *view[], int first, int last)
+{
+    // TODO (Part C): Handle base cases and request partitioning and recursive sorting.
+    if (first >= last)
+    {
+        return;
+    }
+
+    int pivotIndex = partitionReady(view, first, last);
+    quickSortReady(view, first, pivotIndex - 1);
+    quickSortReady(view, pivotIndex + 1, last);
+}
+
+// ===== Resolve this TODO later (Part D) =====
+int binaryFindReady(Parcel *view[], int count, int target)
+{
+    // TODO (Part D): Implement iterative binary search by pickupCode on the sorted view.
+    return -1; // Temporary placeholder; replace with the complete search.
+}
+
+void displayParcels(const Parcel parcels[], int count)
+{
+    for (int index = 0; index < count; index++)
+    {
+        cout << "Code: " << parcels[index].pickupCode
+             << " | Locker: " << parcels[index].locker
+             << " | Ready: " << parcels[index].ready << endl;
+    }
+}
+
+void displayReady(Parcel *view[], int count)
+{
+    for (int index = 0; index < count; index++)
+    {
+        cout << "View index: " << index
+             << " | Code: " << view[index]->pickupCode
+             << " | Locker: " << view[index]->locker << endl;
+    }
+}
+
+/*
+ * Analysis Answers
+ *
+ * C3 - Partition decisions
+ * Ready view before first partition: [640, 580, 325, 710, 190, 505]
+ * first=0, last=5, middle=2, pivotCode=325, boundary=0.
+ * Swap first and middle -> [325, 580, 640, 710, 190, 505].
+ * scan=1: 580 < 325 false; scan=2: 640 < 325 false; scan=3: 710 < 325 false;
+ * scan=4: 190 < 325 true -> boundary=1, swap view[1] and view[4]
+ *      => [325, 190, 640, 710, 580, 505]
+ * scan=5: 505 < 325 false; loop ends.
+ * Final swap view[0] and view[1] -> [190, 325, 640, 710, 580, 505], return 1.
+ *
+ * C4 - Data and memory
+ * Swapping two Parcel pointers by reference exchanges the borrowed addresses in
+ * the view, not the Parcel objects themselves. The objects are owned by the
+ * original parcels array in main, while the view only points to them. The view
+ * must not delete them because they are not dynamically allocated and would be
+ * destroyed when the array ends.
+ *
+ * D3 - Search positions and absence
+ * Trace code 505 and the absent ready-view code 460. Give the checked ranges
+ * and explain why a view index cannot be used as an index into parcels.
+ * Answer:
+ *
+ * D4 - Time and auxiliary space
+ * For n ready parcels and q queries, compare sorting once then using binary
+ * search with scanning the unsorted ready view for every query. Give worst-case
+ * bounds for this quicksort, balanced-partition bounds, and iterative-search
+ * auxiliary space. Distinguish the view storage from recursive-call storage.
+ * Answer:
+ */
