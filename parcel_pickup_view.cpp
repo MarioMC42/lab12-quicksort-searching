@@ -54,7 +54,7 @@ int main()
     displayParcels(parcels, CAPACITY);
 
     // --- STEP D1: Activate after completing the search function ---
-    /*
+    
     int target;
     cout << "Enter a pickup code: ";
     if (!(cin >> target))
@@ -72,7 +72,7 @@ int main()
         cout << "Pickup code " << readyView[position]->pickupCode
              << " | Locker: " << readyView[position]->locker << endl;
     }
-    */
+
     return 0;
 }
 
@@ -125,7 +125,27 @@ void quickSortReady(Parcel *view[], int first, int last)
 int binaryFindReady(Parcel *view[], int count, int target)
 {
     // TODO (Part D): Implement iterative binary search by pickupCode on the sorted view.
-    return -1; // Temporary placeholder; replace with the complete search.
+    int first = 0;
+    int last = count - 1;
+
+    while (first <= last)
+    {
+        int middle = first + (last - first) / 2;
+        if (view[middle]->pickupCode == target)
+        {
+            return middle;
+        }
+        if (view[middle]->pickupCode < target)
+        {
+            first = middle + 1;
+        }
+        else
+        {
+            last = middle - 1;
+        }
+    }
+
+    return -1;
 }
 
 void displayParcels(const Parcel parcels[], int count)
@@ -152,6 +172,10 @@ void displayReady(Parcel *view[], int count)
  * Analysis Answers
  *
  * C3 - Partition decisions
+ * Trace the first partition of the six-pointer ready view. Record first, last,
+ * middle, pivotCode, boundary, scan, and codes before and after each comparison.
+ * Include the loop's final false test and the final pivot exchange.
+ * Answer:
  * Ready view before first partition: [640, 580, 325, 710, 190, 505]
  * first=0, last=5, middle=2, pivotCode=325, boundary=0.
  * Swap first and middle -> [325, 580, 640, 710, 190, 505].
@@ -162,16 +186,27 @@ void displayReady(Parcel *view[], int count)
  * Final swap view[0] and view[1] -> [190, 325, 640, 710, 580, 505], return 1.
  *
  * C4 - Data and memory
+ * Explain what changes when swapping two Parcel pointers by reference.
+ * Identify who owns the objects and why the view must not delete them.
+ * Answer:
  * Swapping two Parcel pointers by reference exchanges the borrowed addresses in
  * the view, not the Parcel objects themselves. The objects are owned by the
  * original parcels array in main, while the view only points to them. The view
- * must not delete them because they are not dynamically allocated and would be
+ * must not delete them because they are not dynamically allocated and will be
  * destroyed when the array ends.
  *
  * D3 - Search positions and absence
  * Trace code 505 and the absent ready-view code 460. Give the checked ranges
  * and explain why a view index cannot be used as an index into parcels.
  * Answer:
+ * Sorted ready view: [190, 325, 505, 580, 640, 710]
+ * For 505: [0, 5] -> middle 2 = 505, found at view index 2.
+ * For 460: [0, 5] -> middle 2 = 505, 505 > 460, so search [0, 1];
+ * [0, 1] -> middle 0 = 190, 190 < 460, so search [1, 1];
+ * [1, 1] -> middle 1 = 325, 325 < 460, so search [2, 1], which is empty.
+ * Return -1. A view index is not a parcels index because the view is a sorted
+ * pointer array, not the original record array. It points to parcel objects at
+ * different original positions, so view[i] is not the same as parcels[i].
  *
  * D4 - Time and auxiliary space
  * For n ready parcels and q queries, compare sorting once then using binary
@@ -179,4 +214,10 @@ void displayReady(Parcel *view[], int count)
  * bounds for this quicksort, balanced-partition bounds, and iterative-search
  * auxiliary space. Distinguish the view storage from recursive-call storage.
  * Answer:
+ * Sorting once + binary search: O(n log n) for one sort and O(q log n) for q
+ * queries. Scanning the unsorted view for each query is O(qn).
+ * Worst-case quicksort is O(n^2), while a balanced partition gives O(n log n).
+ * Iterative binary search uses O(1) auxiliary space. The pointer view itself
+ * stores O(n) memory, while recursive quicksort calls use O(log n) average stack
+ * space and O(n) worst-case stack space.
  */
